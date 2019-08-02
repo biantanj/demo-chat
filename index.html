@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Socket.IO chat</title>
+  <title id="title">Chat demo</title>
   <style>
     * {
       margin: 0;
@@ -40,6 +40,8 @@
       list-style-type: none;
       margin: 0;
       padding: 0;
+      padding-bottom: 50px;
+      padding-top: 22px;
     }
 
     #messages li {
@@ -71,11 +73,22 @@
     .cam {
       color: orange;
     }
+
+    .countNum {
+      position: fixed;
+      width: 100%;
+      background: aquamarine;
+      color: magenta;
+      font-size: 18px;
+    }
   </style>
 </head>
 
 <body>
-  <ul id="messages"></ul>
+    <p class="countNum">Hiện có (<span style="font-weight: bold" id="countNum">1</span>) người đang kết nối</p>
+  <ul id="messages">
+    
+  </ul>
   <form action="">
     <input id="m" autocomplete="off" /><button>Send</button>
   </form>
@@ -84,37 +97,66 @@
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
   var listMau = ["hong", "do", "xanh", "cam"];
+  var tuChui = ["dog", "chó", "cún", "cẩu", "mập", "heo", "lợn"];
+  var countMess = 0;
+
+  var onlyName = "";
   $(function () {
     var name = prompt('Hãy nhập tên...');
-    if(name == "" || name == undefined){
+    if (name == "" || name == undefined) {
       name = "Người lười đặt tên";
     }
-    if(name.toLocaleLowerCase().indexOf("tân") != -1 || name.toLocaleLowerCase().indexOf("tan") != -1){
-      if(name.toLocaleLowerCase().indexOf("chó") != -1 || name.toLocaleLowerCase().indexOf("dog") != -1){
-        name = name.replace("tân","Toàn (Kent)");
-        name = name.replace("tan","Toàn (Kent)");
-        name = name.replace("Tân","Toàn (Kent)");
-        name = name.replace("Tan","Toàn (Kent)");
+    if (name.toLocaleLowerCase().indexOf("tân") != -1 || name.toLocaleLowerCase().indexOf("tan") != -1) {
+      if (name.toLocaleLowerCase().indexOf("chó") != -1 || name.toLocaleLowerCase().indexOf("dog") != -1) {
+        name = name.replace("tân", "Toàn (Kent)");
+        name = name.replace("tan", "Toàn (Kent)");
+        name = name.replace("Tân", "Toàn (Kent)");
+        name = name.replace("Tan", "Toàn (Kent)");
       }
     }
+    onlyName = name;
     name += ": ";
     var mau = "";
-    if(mau == ""){
+    if (mau == "") {
       mau = listMau.random();
     }
-    var userName = '<p class="userName '+ mau +'">' + name + '<p>';
+    var userName = '<p class="userName ' + mau + '">' + name + '<p>';
     var socket = io();
+    socket.emit('ketNoi', onlyName);
     $('form').submit(function (e) {
       e.preventDefault(); // prevents page reloading
-      if($('#m').val() == ""){
+      if ($('#m').val() == "") {
         return;
       }
       socket.emit('chat message', userName + $('#m').val());
       $('#m').val('');
+      countMess = 0;
+      document.title = "Chat demo";
       return false;
     });
     socket.on('chat message', function (msg) {
       $('#messages').append($('<li>').html(msg));
+
+
+      var chuoi = msg.split(":")[0];
+      if (chuoi.indexOf(onlyName) === -1) {
+        countMess++;
+        document.title = "(" + countMess + ")" + " Có tin nhắn";
+      }
+
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+    socket.on('notiKetNoi', function (msg) {
+      if (msg !== onlyName) {
+        $('#messages').append($('<li>').html(msg + " đã kết nối...."));
+      }
+
+    });
+    socket.on('notiMatKetNoi', function (msg) {
+      $('#messages').append($('<li>').html(msg + " đã thoát...."));
+    });
+    socket.on('demNguoi', function (num) {
+      $('#countNum').text(num);
     });
   });
 
